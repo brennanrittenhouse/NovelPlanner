@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Character Tracker</title>
+
+<style>
+/* --- Global Styles --- */
+body {
+    font-family: 'Georgia', serif;
+    margin: 0;
+    padding: 0;
+    background-color: #d9f0d9;
+    color: #2e4d2e;
+}
+
+h1 {
+    margin: 0;
+    padding: 25px 0;
+    text-align: center;
+    background-color: #a8d5a8;
+    color: #2e4d2e;
+    font-family: 'Palatino Linotype', serif;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* --- Layout --- */
+.container {
+    display: flex;
+    height: calc(100vh - 80px);
+}
+
+/* --- Sidebar --- */
+#novelsList {
+    width: 250px;
+    padding: 20px;
+    overflow-y: auto;
+    background-color: #c7e6c7;
+    border-right: 2px solid #b0d6b0;
+}
+
+#novelsList div {
+    margin-bottom: 12px;
+    padding: 10px;
+    cursor: pointer;
+    background-color: #e0f4e0;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    color: #2e4d2e;
+    font-weight: bold;
+    transition: all 0.2s ease;
+}
+
+#novelsList div:hover {
+    background-color: #d4f0d4;
+    transform: translateX(3px);
+}
+
+/* --- Main content --- */
+.mainContent {
+    flex: 1;
+    padding: 30px;
+    background-color: #d9f0d9;
+}
+
+button {
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 10px;
+    border: none;
+    background-color: #a8d5a8;
+    color: #2e4d2e;
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transition: all 0.2s ease;
+}
+
+button:hover {
+    background-color: #8fc48f;
+    transform: translateY(-2px);
+}
+
+/* --- Form --- */
+#newStoryForm {
+    margin-top: 20px;
+    padding: 25px;
+    background: #e0f4e0;
+    border-radius: 15px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    display: none;
+}
+
+#newStoryForm input {
+    display: block;
+    margin-bottom: 15px;
+    padding: 10px;
+    width: 100%;
+    max-width: 400px;
+    border-radius: 8px;
+    border: 1px solid #b0d6b0;
+}
+
+#newStoryForm .form-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+/* --- Novel Detail Page --- */
+#novelDetail {
+    display: none;
+}
+
+#novelCard {
+    margin-top: 20px;
+    padding: 25px;
+    background-color: #e0f4e0;
+    border-radius: 15px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+#novelCard h2 {
+    margin-top: 0;
+}
+
+#homeBtn {
+    margin-bottom: 10px;
+}
+
+/* --- Progress Bar --- */
+#progressContainer {
+    margin-top: 15px;
+}
+
+#progressBarOuter {
+    width: 100%;
+    max-width: 350px;
+    height: 22px;
+    background-color: #b0d6b0;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+#progressBarInner {
+    height: 100%;
+    width: 0%;
+    background-color: #2e4d2e;
+    transition: width 0.3s ease;
+}
+
+#progressText {
+    margin-top: 6px;
+    font-style: italic;
+}
+</style>
+</head>
+<body>
+
+<h1>Character Tracker</h1>
+
+<div class="container">
+    <!-- Sidebar -->
+    <div id="novelsList"></div>
+
+    <!-- Main content -->
+    <div class="mainContent">
+
+        <!-- Landing page -->
+        <div id="landingContent">
+            <button id="addNovelBtn">Add New Story</button>
+
+            <form id="newStoryForm">
+                <h2>Create New Story</h2>
+                <input type="text" id="titleInput" placeholder="Title (required)">
+                <input type="text" id="authorInput" placeholder="Author (required)">
+                <input type="number" id="goalInput" placeholder="Goal Word Count (optional)">
+                <div class="form-buttons">
+                    <button type="submit">Save</button>
+                    <button type="button" id="cancelBtn">Cancel</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Novel detail page -->
+        <div id="novelDetail">
+            <button id="homeBtn">Home</button>
+            <div id="novelCard">
+                <h2 id="detailTitle"></h2>
+                <p id="detailAuthor"></p>
+
+                <div id="progressContainer">
+                    <label>Progress:</label>
+                    <div id="progressBarOuter">
+                        <div id="progressBarInner"></div>
+                    </div>
+                    <p id="progressText"></p>
+                </div>
+
+                <button id="viewCharactersBtn">View Characters</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script type="module" src="index.js"></script>
+</body>
+</html>

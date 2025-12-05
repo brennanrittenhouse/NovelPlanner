@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0" />
+<title>Characters</title>
+
+<style>
+/* match index.html global styles */
+body {
+  font-family: 'Georgia', serif;
+  margin: 0;
+  padding: 0;
+  background-color: #d9f0d9;
+  color: #2e4d2e;
+}
+
+h1 {
+  margin: 0;
+  padding: 25px 0;
+  text-align: center;
+  background-color: #a8d5a8;
+  color: #2e4d2e;
+  font-family: 'Palatino Linotype', serif;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+button {
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 10px;
+  border: none;
+  background-color: #a8d5a8;
+  color: #2e4d2e;
+  font-weight: bold;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  transition: all 0.2s ease;
+}
+
+button:hover {
+  background-color: #8fc48f;
+  transform: translateY(-2px);
+}
+
+.container {
+  display: flex;
+  height: calc(100vh - 80px);
+}
+
+/* left panel: character list */
+#charactersList {
+  flex: 3;
+  padding: 20px;
+  overflow-y: auto;
+  background-color: #c7e6c7;
+  border-right: 2px solid #b0d6b0;
+}
+
+/* each character entry */
+.characterItem {
+  margin-bottom: 12px;
+  padding: 10px;
+  background-color: #e0f4e0;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.characterItem:hover {
+  background-color: #d4f0d4;
+  transform: translateX(3px);
+}
+
+/* right panel */
+#rightPanel {
+  flex: 1;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+#homeBtn {
+  margin-bottom: 10px;
+}
+
+/* Add Character Form Styling */
+#addCharacterForm {
+  display: none;
+  margin-top: 10px;
+  padding: 25px;
+  background: #e0f4e0;
+  border-radius: 15px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+#addCharacterForm input {
+  display: block;
+  margin-bottom: 15px;
+  padding: 10px;
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid #b0d6b0;
+}
+
+.form-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+#addCharacterForm select {
+  display: block;
+  margin-bottom: 15px;
+  padding: 10px;
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid #b0d6b0;
+  color: #6b6b6b;   /* same grey text as inputs */
+  background-color: #fff; /* consistent background */
+}
+
+
+</style>
+</head>
+<body>
+
+<h1 id="pageHeader">Characters</h1>
+
+<div class="container">
+
+  <!-- LEFT COLUMN: CHARACTER LIST -->
+  <div id="charactersList">
+    <h2 id="characterTitle">Characters</h2>
+  </div>
+
+  <!-- RIGHT COLUMN -->
+  <div id="rightPanel">
+
+    <button id="homeBtn">Home</button>
+
+    <button id="addCharacterBtn">Add Character</button>
+    <button id="viewMapBtn">View Character Map</button>
+
+    <!-- ADD CHARACTER FORM -->
+    <form id="addCharacterForm">
+      <h2>Add Character</h2>
+      <input type="text" id="firstNameInput" placeholder="First Name" required>
+      <input type="text" id="middleNameInput" placeholder="Middle Name">
+      <input type="text" id="lastNameInput" placeholder="Last Name">
+      <input type="number" id="ageInput" placeholder="Age">
+
+      <select id="genderInput">
+        <option value="">Select Gender</option>
+        <option value="Male">Male</option>
+        <option value="Female">Female</option>
+        <option value="Non-binary">Non-binary</option>
+        <option value="Other">Other</option>
+      </select>
+
+      <div class="form-buttons">
+        <button type="submit">Save</button>
+        <button type="button" id="cancelAddBtn">Cancel</button>
+      </div>
+    </form>
+
+  </div>
+
+</div>
+
+<script>
+// Get story info
+const params = new URLSearchParams(window.location.search);
+const index = params.get("index");
+const stories = JSON.parse(localStorage.getItem("stories")) || [];
+const story = stories[index];
+
+const listPanel = document.getElementById("charactersList");
+
+if (story && story.characters && story.characters.length > 0) {
+  story.characters.forEach(name => {
+    const div = document.createElement("div");
+    div.className = "characterItem";
+    div.textContent = name;
+    listPanel.appendChild(div);
+  });
+} else {
+  const div = document.createElement("div");
+  div.className = "characterItem";
+  div.textContent = "No characters yet";
+  listPanel.appendChild(div);
+}
+
+// Home button
+document.getElementById("homeBtn").addEventListener("click", () => {
+  window.location.href = "index.html";
+});
+
+// Show form
+document.getElementById("addCharacterBtn").addEventListener("click", () => {
+  document.getElementById("addCharacterForm").style.display = "block";
+});
+
+// Hide form
+document.getElementById("cancelAddBtn").addEventListener("click", () => {
+  document.getElementById("addCharacterForm").reset();
+  document.getElementById("addCharacterForm").style.display = "none";
+});
+
+// Submit form
+document.getElementById("addCharacterForm").addEventListener("submit", (event) => {
+  event.preventDefault();
+
+  const first = document.getElementById("firstNameInput").value.trim();
+  const middle = document.getElementById("middleNameInput").value.trim();
+  const last = document.getElementById("lastNameInput").value.trim();
+
+  alert(`Saving character:\n${first} ${middle} ${last}`);
+
+  // Later we will:
+  //  - push to story.characters
+  //  - update localStorage
+  //  - re-render list
+
+  document.getElementById("addCharacterForm").reset();
+  document.getElementById("addCharacterForm").style.display = "none";
+});
+
+// Placeholder for map
+document.getElementById("viewMapBtn").addEventListener("click", () => {
+  alert("Character Map has not been implemented yet.");
+});
+</script>
+
+</body>
+</html>
