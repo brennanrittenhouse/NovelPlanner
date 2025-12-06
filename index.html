@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0" />
 <title>Character Tracker</title>
 
 <style>
@@ -14,7 +14,6 @@ body {
     background-color: #d9f0d9;
     color: #2e4d2e;
 }
-
 h1 {
     margin: 0;
     padding: 25px 0;
@@ -39,7 +38,6 @@ h1 {
     background-color: #c7e6c7;
     border-right: 2px solid #b0d6b0;
 }
-
 #novelsList div {
     margin-bottom: 12px;
     padding: 10px;
@@ -51,7 +49,6 @@ h1 {
     font-weight: bold;
     transition: all 0.2s ease;
 }
-
 #novelsList div:hover {
     background-color: #d4f0d4;
     transform: translateX(3px);
@@ -63,7 +60,6 @@ h1 {
     padding: 30px;
     background-color: #d9f0d9;
 }
-
 button {
     padding: 10px 20px;
     font-size: 16px;
@@ -76,7 +72,6 @@ button {
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     transition: all 0.2s ease;
 }
-
 button:hover {
     background-color: #8fc48f;
     transform: translateY(-2px);
@@ -91,7 +86,6 @@ button:hover {
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     display: none;
 }
-
 #newStoryForm input {
     display: block;
     margin-bottom: 15px;
@@ -101,7 +95,6 @@ button:hover {
     border-radius: 8px;
     border: 1px solid #b0d6b0;
 }
-
 #newStoryForm .form-buttons {
     display: flex;
     gap: 10px;
@@ -111,7 +104,6 @@ button:hover {
 #novelDetail {
     display: none;
 }
-
 #novelCard {
     margin-top: 20px;
     padding: 25px;
@@ -119,11 +111,9 @@ button:hover {
     border-radius: 15px;
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
-
 #novelCard h2 {
     margin-top: 0;
 }
-
 #homeBtn {
     margin-bottom: 10px;
 }
@@ -132,7 +122,6 @@ button:hover {
 #progressContainer {
     margin-top: 15px;
 }
-
 #progressBarOuter {
     width: 100%;
     max-width: 350px;
@@ -141,35 +130,59 @@ button:hover {
     border-radius: 12px;
     overflow: hidden;
 }
-
 #progressBarInner {
     height: 100%;
     width: 0%;
     background-color: #2e4d2e;
     transition: width 0.3s ease;
 }
-
 #progressText {
     margin-top: 6px;
     font-style: italic;
 }
+
+/* --- Toast --- */
+#toastOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.4);
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+#toastBox {
+    background: #ffffff;
+    padding: 20px 30px;
+    border-radius: 12px;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+    text-align: center;
+    font-family: 'Georgia', serif;
+}
+#toastButtons {
+    margin-top: 15px;
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+.toastBtn {
+    padding: 8px 18px;
+}
 </style>
 </head>
+
 <body>
 
 <h1>Character Tracker</h1>
 
 <div class="container">
-    <!-- Sidebar -->
     <div id="novelsList"></div>
-
-    <!-- Main content -->
     <div class="mainContent">
 
-        <!-- Landing page -->
         <div id="landingContent">
-            <button id="addNovelBtn">Add New Story</button>
-
+            <button id="addNovelBtn">Add New Story 📚</button>
             <form id="newStoryForm">
                 <h2>Create New Story</h2>
                 <input type="text" id="titleInput" placeholder="Title (required)">
@@ -182,9 +195,8 @@ button:hover {
             </form>
         </div>
 
-        <!-- Novel detail page -->
         <div id="novelDetail">
-            <button id="homeBtn">Home</button>
+            <button id="homeBtn">🏠 Home</button>
             <div id="novelCard">
                 <h2 id="detailTitle"></h2>
                 <p id="detailAuthor"></p>
@@ -197,10 +209,31 @@ button:hover {
                     <p id="progressText"></p>
                 </div>
 
-                <button id="viewCharactersBtn">View Characters</button>
+                <!-- Update word count form (hidden initially) -->
+                <div id="updateWordCountForm" style="margin-top:10px; display:none;">
+                    <input type="number" id="wordCountInput" min="0" style="width:100px; padding:5px;">
+                    <button id="saveWordCountBtn">Save</button>
+                </div>
+
+                <div style="margin-top:15px;">
+                    <button id="updateWordCountBtn">✏️ Edit</button>
+                    <button id="viewCharactersBtn">👀 View Characters</button>
+                    <button id="deleteStoryBtn">🗑️ Delete Story</button>
+                </div>
             </div>
         </div>
 
+    </div>
+</div>
+
+<!-- === Toast Popup === -->
+<div id="toastOverlay">
+    <div id="toastBox">
+        <div id="toastMessage"></div>
+        <div id="toastButtons">
+            <button class="toastBtn" id="toastYes">Yes</button>
+            <button class="toastBtn" id="toastNo">No</button>
+        </div>
     </div>
 </div>
 
