@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0" />
+<title>Character Details</title>
+<style>
+body {
+    font-family: 'Georgia', serif;
+    margin: 0;
+    padding: 0;
+    background-color: #d9f0d9;
+    color: #2e4d2e;
+}
+h1 {
+    margin: 0;
+    padding: 25px 0;
+    text-align: center;
+    background-color: #a8d5a8;
+    color: #2e4d2e;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    font-family: 'Palatino Linotype', serif;
+}
+#detailCard {
+    margin: 25px auto;
+    padding: 25px;
+    width: 60%;
+    background: #e0f4e0;
+    border-radius: 20px;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+}
+.section {
+    margin-bottom: 12px;
+}
+button {
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 10px;
+    border: none;
+    background-color: #a8d5a8;
+    color: #2e4d2e;
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transition: all 0.2s ease;
+}
+button:hover {
+    background-color: #8fc48f;
+    transform: translateY(-2px);
+}
+
+/* === Buttons === */
+#buttonRow {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 25px;
+}
+
+/* === Notes box === */
+.notesBox, .relationshipDetailsBox {
+    display: block;
+    width: 100%;
+    height: 150px;
+    padding: 10px;
+    resize: none;
+    overflow-y: auto;
+    border-radius: 8px;
+    border: 1px solid #b0d6b0;
+    font-family: 'Georgia', serif;
+}
+
+/* === Trait boxes === */
+#traitsList {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.traitBox {
+    background-color: #cfe8cf;
+    padding: 6px 10px;
+    border-radius: 10px;
+    font-size: 14px;
+}
+
+/* === Relationships === */
+#relationshipsList {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.relationshipBox {
+    background-color: rgba(34, 85, 34, 0.3); /* deep earthy green with transparency */
+    padding: 6px 10px;
+    border-radius: 10px;
+    font-size: 14px;
+}
+
+/* Extra spacing for section headings */
+.extraSpacing {
+    margin-top: 20px;
+}
+
+/* === Toast === */
+#toastOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.4);
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+#toastBox {
+    background: #ffffff;
+    padding: 20px 30px;
+    border-radius: 12px;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+    text-align: center;
+    font-family: 'Georgia', serif;
+}
+
+#toastButtons {
+    margin-top: 15px;
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.toastBtn {
+    padding: 8px 18px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Character Tracker</h1>
+
+<div id="detailCard"></div>
+
+<div id="buttonRow">
+    <button id="backBtn">🔙</button>
+    <button id="editBtn">✏️ Edit Character</button>
+    <button id="deleteBtn">🗑️ Delete Character</button>
+</div>
+
+<!-- === Toast Popup === -->
+<div id="toastOverlay">
+    <div id="toastBox">
+        <div id="toastMessage"></div>
+        <div id="toastButtons">
+            <button class="toastBtn" id="toastYes">Yes</button>
+            <button class="toastBtn" id="toastNo">No</button>
+        </div>
+    </div>
+</div>
+
+<script>
+/* === LOAD PARAMS === */
+const params = new URLSearchParams(window.location.search);
+const title = params.get("title");
+const index = parseInt(params.get("index"));
+
+let novels = JSON.parse(localStorage.getItem("novels")) || [];
+let story = novels.find(s => s.title === title);
+let char = story.characters[index];
+
+/* === BUILD DETAILS === */
+const card = document.getElementById("detailCard");
+card.innerHTML = `<h2>${char.firstName} ${char.lastName}</h2>`;
+
+function addSection(label, value) {
+    if (value && value.toString().trim() !== "") {
+        const div = document.createElement("div");
+        div.className = "section";
+        div.textContent = `${label}: ${value}`;
+        card.appendChild(div);
+    }
+}
+
+addSection("First Name", char.firstName);
+addSection("Middle Name", char.middleName);
+addSection("Last Name", char.lastName);
+addSection("Age", char.age);
+addSection("Gender", char.gender);
+
+/* === Personality Traits (boxes) === */
+if (char.personalityTraits?.length > 0) {
+    const traitsLabel = document.createElement("div");
+    traitsLabel.className = "section";
+    traitsLabel.textContent = "Personality Traits:";
+    card.appendChild(traitsLabel);
+
+    const traitsList = document.createElement("div");
+    traitsList.id = "traitsList";
+
+    char.personalityTraits.forEach(trait => {
+        const box = document.createElement("div");
+        box.className = "traitBox";
+        box.textContent = trait;
+        traitsList.appendChild(box);
+    });
+
+    card.appendChild(traitsList);
+}
+
+/* === Relationships (boxes with optional scrollable details) === */
+if (char.relationships?.length > 0) {
+    const relLabel = document.createElement("div");
+    relLabel.className = "section extraSpacing";
+    relLabel.textContent = "Relationships:";
+    card.appendChild(relLabel);
+
+    const relList = document.createElement("div");
+    relList.id = "relationshipsList";
+
+    char.relationships.forEach(rel => {
+        const box = document.createElement("div");
+        box.className = "relationshipBox";
+
+        if (rel.relatedTo) {
+            const name = `${rel.relatedTo.firstName} ${rel.relatedTo.lastName}`;
+            const nature = rel.nature || "Unknown";
+            box.textContent = `${name} (${nature})`;
+
+            if (rel.details && rel.details.trim() !== "") {
+                const detailsBox = document.createElement("textarea");
+                detailsBox.className = "relationshipDetailsBox";
+                detailsBox.readOnly = true;
+                detailsBox.value = rel.details;
+                box.appendChild(document.createElement("br"));
+                box.appendChild(detailsBox);
+            }
+        } else {
+            const nature = rel.nature || "Unknown";
+            box.textContent = `(Unknown) (${nature})`;
+
+            if (rel.details && rel.details.trim() !== "") {
+                const detailsBox = document.createElement("textarea");
+                detailsBox.className = "relationshipDetailsBox";
+                detailsBox.readOnly = true;
+                detailsBox.value = rel.details;
+                box.appendChild(document.createElement("br"));
+                box.appendChild(detailsBox);
+            }
+        }
+
+        relList.appendChild(box);
+    });
+
+    card.appendChild(relList);
+}
+
+/* === Notes === */
+if (char.notes?.trim() !== "") {
+    const notesLabel = document.createElement("div");
+    notesLabel.className = "section extraSpacing";
+    notesLabel.textContent = "Notes:";
+    card.appendChild(notesLabel);
+
+    const textarea = document.createElement("textarea");
+    textarea.className = "notesBox";
+    textarea.value = char.notes;
+    textarea.readOnly = true;
+    card.appendChild(textarea);
+}
+
+/* === BACK === */
+document.getElementById("backBtn").addEventListener("click", () => {
+    const encodedTitle = encodeURIComponent(title);
+    window.location.href = `characterView.html?title=${encodedTitle}`;
+});
+
+/* === EDIT === */
+document.getElementById("editBtn").addEventListener("click", () => {
+    const encodedTitle = encodeURIComponent(title);
+    window.location.href = `editCharacter.html?title=${encodedTitle}&index=${index}`;
+});
+
+/* === DELETE (TOAST) === */
+const toastOverlay = document.getElementById("toastOverlay");
+const toastMessage = document.getElementById("toastMessage");
+
+document.getElementById("deleteBtn").addEventListener("click", () => {
+    toastMessage.textContent = `Are you sure you want to delete ${char.firstName} ${char.lastName}?`;
+    toastOverlay.style.display = "flex";
+});
+
+/* YES -> DELETE */
+document.getElementById("toastYes").addEventListener("click", () => {
+    story.characters.splice(index, 1);
+    localStorage.setItem("novels", JSON.stringify(novels));
+
+    const encodedTitle = encodeURIComponent(title);
+    window.location.href = `characterView.html?title=${encodedTitle}`;
+});
+
+/* NO -> CLOSE TOAST */
+document.getElementById("toastNo").addEventListener("click", () => {
+    toastOverlay.style.display = "none";
+});
+</script>
+
+</body>
+</html>

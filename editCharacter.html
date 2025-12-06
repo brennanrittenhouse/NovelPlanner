@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Edit Character</title>
+
+<!-- Choices.js CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+
+<style>
+body {
+    font-family: 'Georgia', serif;
+    background-color: #d9f0d9;
+    margin: 0;
+    padding: 0;
+    color: #2e4d2e;
+}
+
+h1 {
+    margin: 0;
+    padding: 25px 0;
+    text-align: center;
+    background-color: #a8d5a8;
+    color: #2e4d2e;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    font-family: 'Palatino Linotype', serif;
+}
+
+#formContainer {
+    margin: 25px auto;
+    width: 60%;
+    background: #e0f4e0;
+    padding: 25px;
+    border-radius: 20px;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+}
+
+input, select, textarea {
+    margin: 8px 0;
+    padding: 10px;
+    width: 100%;
+    border-radius: 8px;
+    border: 1px solid #8fbf8f;
+    background-color: #ffffff;
+    font-family: 'Georgia', serif;
+}
+
+label {
+    font-weight: bold;
+    margin-top: 10px;
+    display: block;
+}
+
+button {
+    margin-top: 15px;
+    padding: 10px 20px;
+    border-radius: 10px;
+    border: none;
+    background-color: #a8d5a8;
+    color: #2e4d2e;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+button:hover {
+    background-color: #8fc48f;
+}
+
+/* Traits display area */
+#traitsList {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.traitBox {
+    background-color: #cfe8cf;
+    padding: 6px 10px;
+    border-radius: 10px;
+    position: relative;
+    font-size: 14px;
+}
+
+.traitBox span {
+    margin-right: 10px;
+}
+
+.removeTrait {
+    position: absolute;
+    right: 5px;
+    top: 2px;
+    cursor: pointer;
+    font-weight: bold;
+    color: #3b3b3b;
+}
+
+/* Notes */
+#notesField {
+    height: 150px;
+    resize: vertical;
+    overflow: auto;
+}
+
+/* Relationships display */
+#relationshipsList {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.relationshipBox {
+    background-color: #cfe8cf;
+    padding: 6px 10px;
+    border-radius: 10px;
+    position: relative;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.relationshipBox textarea {
+    margin-top: 5px;
+    height: 80px;
+    resize: vertical;
+    overflow: auto;
+    background-color: #ffffff;
+    color: #2e4d2e;
+    border: 1px solid #8fbf8f;
+    border-radius: 8px;
+    width: 100%;
+    font-family: 'Georgia', serif;
+    padding: 8px;
+}
+
+.removeRel {
+    position: absolute;
+    right: 5px;
+    top: 2px;
+    cursor: pointer;
+    font-weight: bold;
+    color: #3b3b3b;
+}
+
+#cancelRelEditBtn {
+    margin-left: 10px;
+    background-color: #d5a8a8;
+}
+#cancelRelEditBtn:hover {
+    background-color: #c48f8f;
+}
+</style>
+</head>
+<body>
+
+<h1>Edit Character</h1>
+
+<div id="formContainer">
+
+    <label>First Name</label>
+    <input type="text" id="firstNameInput">
+
+    <label>Middle Name</label>
+    <input type="text" id="middleNameInput">
+
+    <label>Last Name</label>
+    <input type="text" id="lastNameInput">
+
+    <label>Age</label>
+    <input type="number" id="ageInput">
+
+    <label>Gender</label>
+    <select id="genderInput">
+        <option value="">Select</option>
+        <option>Male</option>
+        <option>Female</option>
+        <option>Non-binary</option>
+        <option>Other</option>
+    </select>
+
+    <!-- Personality Traits -->
+    <label>Personality Traits</label>
+    <input type="text" id="traitInput" placeholder="Enter trait">
+    <button type="button" id="addTraitBtn">👤 Add Trait</button>
+    <div id="traitsList"></div>
+
+    <!-- Notes -->
+    <label>Notes</label>
+    <textarea id="notesField" placeholder="Write notes here..."></textarea>
+
+    <!-- Relationships -->
+    <label>Relationships</label>
+    <select id="relatedCharSelect">
+        <option value="">Select Character</option>
+    </select>
+
+    <label>Relationship Type</label>
+    <select id="relationshipTypeSelect">
+        <option value="">Select Type</option>
+        <optgroup label="Romantic">
+            <option>Dating</option>
+            <option>Engaged</option>
+            <option>Ex-partners</option>
+            <option>Lovers</option>
+            <option>Married</option>
+            <option>Situationship</option>
+        </optgroup>
+        <optgroup label="Family">
+            <option>Adoptive Parent/Adoptive Child</option>
+            <option>Aunt/Uncle and Niece/Nephew</option>
+            <option>Foster Parent/Foster Child</option>
+            <option>Grandparent/Grandchild</option>
+            <option>Great Grandparent/Great Grandchild</option>
+            <option>Great Great Grandparent/Great Great Grandchild</option>
+            <option>Half-Siblings</option>
+            <option>Parent/Child</option>
+            <option>Siblings</option>
+            <option>Step-Parent/Step-Child</option>
+            <option>Step-Siblings</option>
+        </optgroup>
+        <optgroup label="Friendship">
+            <option>Classmates</option>
+            <option>Club Members</option>
+            <option>Family Friends</option>
+            <option>Friends</option>
+            <option>Mentor</option>
+            <option>Neighbour</option>
+            <option>Roommate</option>
+            <option>Teacher/Student</option>
+            <option>Teammates</option>
+        </optgroup>
+        <optgroup label="Work / Professional">
+            <option>Boss/Employee</option>
+            <option>Client/Service Provider</option>
+            <option>Co-workers</option>
+        </optgroup>
+        <optgroup label="Conflict / Rivalry">
+            <option>Bully/Victim</option>
+            <option>Enemies</option>
+            <option>Frenemies</option>
+            <option>Rivals</option>
+            <option>Secret Ally</option>
+        </optgroup>
+        <optgroup label="Other">
+            <option>Other (See Details)</option>
+            <option>Pet/Owner</option>
+        </optgroup>
+    </select>
+
+    <label>Details (optional)</label>
+    <textarea id="relationshipDetailsInput" placeholder="Enter relationship details..." rows="4"></textarea>
+
+    <button type="button" id="addRelationshipBtn">👥 Add Relationship</button>
+    <button type="button" id="cancelRelEditBtn" style="display:none;">Cancel Edit</button>
+
+    <div id="relationshipsList"></div>
+
+    <button id="saveBtn">Save Changes</button>
+    <button id="cancelBtn">Cancel</button>
+</div>
+
+<!-- Choices.js JS -->
+<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+
+<script type="module">
+import Relationship from './Relationship.js';
+
+/* === LOAD DATA === */
+const params = new URLSearchParams(window.location.search);
+const title = params.get("title");
+const index = parseInt(params.get("index"));
+
+let novels = JSON.parse(localStorage.getItem("novels")) || [];
+let story = novels.find(s => s.title === title);
+let char = story.characters[index];
+
+/* === POPULATE FIELDS === */
+document.getElementById("firstNameInput").value = char.firstName || "";
+document.getElementById("middleNameInput").value = char.middleName || "";
+document.getElementById("lastNameInput").value = char.lastName || "";
+document.getElementById("ageInput").value = char.age || "";
+document.getElementById("genderInput").value = char.gender || "";
+document.getElementById("notesField").value = char.notes || "";
+
+/* === TRAITS === */
+let traits = char.personalityTraits || [];
+
+function renderTraits() {
+    const list = document.getElementById("traitsList");
+    list.innerHTML = "";
+    traits.forEach((t, i) => {
+        const div = document.createElement("div");
+        div.className = "traitBox";
+        div.innerHTML = `<span>${t}</span><div class="removeTrait" data-i="${i}">x</div>`;
+        list.appendChild(div);
+    });
+}
+renderTraits();
+
+document.getElementById("addTraitBtn").addEventListener("click", () => {
+    const val = document.getElementById("traitInput").value.trim();
+    if (val !== "") {
+        traits.push(val);
+        document.getElementById("traitInput").value = "";
+        renderTraits();
+    }
+});
+
+document.getElementById("traitsList").addEventListener("click", (e) => {
+    if (e.target.classList.contains("removeTrait")) {
+        const i = parseInt(e.target.dataset.i);
+        traits.splice(i, 1);
+        renderTraits();
+    }
+});
+
+/* === RELATIONSHIPS === */
+let relationships = char.relationships || [];
+let editingRelIndex = null;
+
+const relatedSelect = document.getElementById("relatedCharSelect");
+const typeSelect = document.getElementById("relationshipTypeSelect");
+const detailsInput = document.getElementById("relationshipDetailsInput");
+const addRelBtn = document.getElementById("addRelationshipBtn");
+const cancelRelBtn = document.getElementById("cancelRelEditBtn");
+const relationshipsList = document.getElementById("relationshipsList");
+
+// Make relationship type dropdown searchable
+const typeChoices = new Choices(typeSelect, {
+    searchEnabled: true,
+    itemSelectText: '',
+    placeholderValue: 'Select or type to search'
+});
+
+// Populate related character dropdown (exclude current character)
+story.characters.forEach(c => {
+    if (c !== char) {
+        const option = document.createElement("option");
+        option.value = c.firstName + " " + c.lastName;
+        option.textContent = `${c.firstName} ${c.lastName}`;
+        relatedSelect.appendChild(option);
+    }
+});
+
+function renderRelationships() {
+    relationshipsList.innerHTML = "";
+    relationships.forEach((rel, i) => {
+        const name = rel.relatedTo ? `${rel.relatedTo.firstName} ${rel.relatedTo.lastName}` : "Unknown";
+        const type = rel.nature || "Unknown";
+        const details = rel.details || "";
+
+        const div = document.createElement("div");
+        div.className = "relationshipBox";
+        div.dataset.index = i;
+        div.textContent = `${name} (${type})`;
+
+        if (details.trim() !== "") {
+            const detailsBox = document.createElement("textarea");
+            detailsBox.readOnly = true;
+            detailsBox.value = details;
+            detailsBox.className = "relationshipDetailsBox";
+            div.appendChild(document.createElement("br"));
+            div.appendChild(detailsBox);
+        }
+
+        const removeBtn = document.createElement("div");
+        removeBtn.className = "removeRel";
+        removeBtn.dataset.i = i;
+        removeBtn.textContent = "x";
+        div.appendChild(removeBtn);
+
+        relationshipsList.appendChild(div);
+    });
+}
+renderRelationships();
+
+// Add or save relationship
+addRelBtn.addEventListener("click", () => {
+    const selectedName = relatedSelect.value;
+    const relatedChar = story.characters.find(c => `${c.firstName} ${c.lastName}` === selectedName);
+    const nature = typeSelect.value;
+    const details = detailsInput.value.trim() || "";
+
+    if (!relatedChar || nature === "") {
+        alert("Please select both character and relationship type.");
+        return;
+    }
+
+    if (editingRelIndex !== null) {
+        // Save edits
+        relationships[editingRelIndex].relatedTo = relatedChar;
+        relationships[editingRelIndex].nature = nature;
+        relationships[editingRelIndex].details = details;
+        editingRelIndex = null;
+        addRelBtn.textContent = "Add Relationship";
+        cancelRelBtn.style.display = "none";
+    } else {
+        // Add new
+        const newRel = new Relationship(nature, relatedChar, details);
+        relationships.push(newRel);
+    }
+
+    renderRelationships();
+    relatedSelect.value = "";
+    typeSelect.value = "";
+    typeChoices.setChoiceByValue(""); // reset searchable dropdown
+    detailsInput.value = "";
+});
+
+// Click on relationship to edit
+relationshipsList.addEventListener("click", e => {
+    const relDiv = e.target.closest(".relationshipBox");
+    if (!relDiv) return;
+
+    if (e.target.classList.contains("removeRel")) {
+        const i = parseInt(e.target.dataset.i);
+        relationships.splice(i, 1);
+        renderRelationships();
+        return;
+    }
+
+    const i = parseInt(relDiv.dataset.index);
+    const rel = relationships[i];
+    if (!rel) return;
+
+    editingRelIndex = i;
+
+    // Populate fields
+    relatedSelect.value = `${rel.relatedTo.firstName} ${rel.relatedTo.lastName}`;
+    typeSelect.value = rel.nature || "";
+    typeChoices.setChoiceByValue(rel.nature || "");
+    detailsInput.value = rel.details || "";
+
+    addRelBtn.textContent = "Save Relationship Changes";
+    cancelRelBtn.style.display = "inline-block";
+});
+
+// Cancel relationship edit
+cancelRelBtn.addEventListener("click", () => {
+    editingRelIndex = null;
+    relatedSelect.value = "";
+    typeSelect.value = "";
+    typeChoices.setChoiceByValue("");
+    detailsInput.value = "";
+    addRelBtn.textContent = "Add Relationship";
+    cancelRelBtn.style.display = "none";
+});
+
+/* === SAVE CHARACTER === */
+document.getElementById("saveBtn").addEventListener("click", () => {
+    char.firstName = document.getElementById("firstNameInput").value;
+    char.middleName = document.getElementById("middleNameInput").value;
+    char.lastName = document.getElementById("lastNameInput").value;
+    char.age = document.getElementById("ageInput").value;
+    char.gender = document.getElementById("genderInput").value;
+    char.personalityTraits = traits;
+    char.notes = document.getElementById("notesField").value;
+    char.relationships = relationships;
+
+    localStorage.setItem("novels", JSON.stringify(novels));
+
+    alert("Character saved!");
+    const encoded = encodeURIComponent(title);
+    window.location.href = `characterDetail.html?title=${encoded}&index=${index}`;
+});
+
+/* === CANCEL === */
+document.getElementById("cancelBtn").addEventListener("click", () => {
+    const encoded = encodeURIComponent(title);
+    window.location.href = `characterDetail.html?title=${encoded}&index=${index}`;
+});
+</script>
+
+</body>
+</html>
