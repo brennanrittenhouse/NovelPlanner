@@ -4,7 +4,6 @@ import Relationship from './Relationship.js';
 
 let novels = [];
 
-// --- DOM Elements ---
 const addBtn = document.getElementById("addNovelBtn");
 const form = document.getElementById("newStoryForm");
 const cancelBtn = document.getElementById("cancelBtn");
@@ -14,16 +13,21 @@ const landingContent = document.getElementById("landingContent");
 const detailView = document.getElementById("novelDetail");
 const detailTitle = document.getElementById("detailTitle");
 const detailAuthor = document.getElementById("detailAuthor");
+
+const editStoryBtn = document.getElementById("editStoryBtn");
+const editStoryForm = document.getElementById("editStoryForm");
+const saveStoryChangesBtn = document.getElementById("saveStoryChangesBtn");
+const cancelStoryEditBtn = document.getElementById("cancelStoryEditBtn");
+
+const editTitleInput = document.getElementById("editTitleInput");
+const editAuthorInput = document.getElementById("editAuthorInput");
+const editGoalInput = document.getElementById("editGoalInput");
+const editWordCountInput = document.getElementById("editWordCountInput");
+
 const viewCharactersBtn = document.getElementById("viewCharactersBtn");
 const deleteStoryBtn = document.getElementById("deleteStoryBtn");
 const homeBtn = document.getElementById("homeBtn");
 
-const updateWordCountBtn = document.getElementById("updateWordCountBtn");
-const updateWordCountForm = document.getElementById("updateWordCountForm");
-const wordCountInput = document.getElementById("wordCountInput");
-const saveWordCountBtn = document.getElementById("saveWordCountBtn");
-
-// Progress bar
 const progressBarInner = document.getElementById("progressBarInner");
 const progressText = document.getElementById("progressText");
 
@@ -33,7 +37,7 @@ const toastMessage = document.getElementById("toastMessage");
 const toastYes = document.getElementById("toastYes");
 const toastNo = document.getElementById("toastNo");
 
-// --- Load existing novels ---
+// Load existing
 const saved = localStorage.getItem("novels");
 if (saved) {
     const parsed = JSON.parse(saved);
@@ -49,10 +53,10 @@ if (saved) {
 }
 renderNovels();
 
-// --- Show form ---
+// --- Show create story form ---
 addBtn.addEventListener("click", () => form.style.display = "block");
 
-// --- Cancel form ---
+// --- Cancel create form ---
 cancelBtn.addEventListener("click", () => {
     form.reset();
     form.style.display = "none";
@@ -80,15 +84,13 @@ form.addEventListener("submit", (event) => {
 
     novels.push(newStory);
     localStorage.setItem("novels", JSON.stringify(novels));
-
     renderNovels();
     form.reset();
     form.style.display = "none";
-
     showNovelDetail(newStory);
 });
 
-// --- Render novels ---
+// --- Render sidebar ---
 function renderNovels() {
     novelsListDiv.innerHTML = "";
     novels.forEach(story => {
@@ -99,7 +101,7 @@ function renderNovels() {
     });
 }
 
-// --- Show novel detail page ---
+// --- Show detail view ---
 function showNovelDetail(story) {
     landingContent.style.display = "none";
     novelsListDiv.style.display = "none";
@@ -107,23 +109,57 @@ function showNovelDetail(story) {
 
     detailTitle.textContent = story.title;
     detailAuthor.textContent = `Author: ${story.author}`;
-
     updateProgress(story);
 
-    // --- Buttons ---
+    // Open edit form
+    editStoryBtn.onclick = () => {
+        editTitleInput.value = story.title;
+        editAuthorInput.value = story.author;
+        editGoalInput.value = story.goalWordCount || "";
+        editWordCountInput.value = story.wordCount || 0;
+        editStoryForm.style.display = "block";
+    };
+
+    // Save edits
+    saveStoryChangesBtn.onclick = () => {
+        story.title = editTitleInput.value.trim();
+        story.author = editAuthorInput.value.trim();
+        story.goalWordCount = editGoalInput.value ? parseInt(editGoalInput.value) : null;
+        
+        const wc = parseInt(editWordCountInput.value);
+        if (!isNaN(wc) && wc >= 0) story.wordCount = wc;
+
+        localStorage.setItem("novels", JSON.stringify(novels));
+        renderNovels();
+        updateProgress(story);
+
+        detailTitle.textContent = story.title;
+        detailAuthor.textContent = `Author: ${story.author}`;
+
+        editStoryForm.style.display = "none";
+    };
+
+    // Cancel edit
+    cancelStoryEditBtn.onclick = () => {
+        editStoryForm.style.display = "none";
+    };
+
+    // View characters
     viewCharactersBtn.onclick = () => {
         const encodedTitle = encodeURIComponent(story.title);
         window.location.href = `characterView.html?title=${encodedTitle}`;
     };
 
+    // Delete
     deleteStoryBtn.onclick = () => {
-        toastMessage.textContent = `Are you sure you want to delete "${story.title}"?`;
+        toastMessage.textContent = `Delete "${story.title}"?`;
         toastOverlay.style.display = "flex";
 
         toastYes.onclick = () => {
-            const index = novels.findIndex(s => s.title === story.title);
-            if (index !== -1) novels.splice(index, 1);
+            const index = novels.indexOf(story);
+            novels.splice(index, 1);
             localStorage.setItem("novels", JSON.stringify(novels));
+
             toastOverlay.style.display = "none";
             detailView.style.display = "none";
             landingContent.style.display = "block";
@@ -133,28 +169,9 @@ function showNovelDetail(story) {
 
         toastNo.onclick = () => toastOverlay.style.display = "none";
     };
-
-    // --- Update Word Count ---
-    updateWordCountForm.style.display = "none"; // hide initially
-    updateWordCountBtn.onclick = () => {
-        wordCountInput.value = story.wordCount;
-        updateWordCountForm.style.display = "block";
-    };
-
-    saveWordCountBtn.onclick = () => {
-        const val = parseInt(wordCountInput.value);
-        if (!isNaN(val) && val >= 0) {
-            story.wordCount = val;
-            localStorage.setItem("novels", JSON.stringify(novels));
-            updateProgress(story);
-            updateWordCountForm.style.display = "none";
-        } else {
-            alert("Please enter a valid non-negative number.");
-        }
-    };
 }
 
-// --- Update progress bar ---
+// --- Progress ---
 function updateProgress(story) {
     if (story.goalWordCount && story.goalWordCount > 0) {
         const percent = Math.min(100, Math.round((story.wordCount / story.goalWordCount) * 100));
@@ -166,7 +183,7 @@ function updateProgress(story) {
     }
 }
 
-// --- Home button ---
+// --- Home ---
 homeBtn.addEventListener("click", () => {
     detailView.style.display = "none";
     landingContent.style.display = "block";

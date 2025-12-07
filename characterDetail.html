@@ -21,17 +21,13 @@ h1 {
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     font-family: 'Palatino Linotype', serif;
 }
-#detailCard {
-    margin: 25px auto;
-    padding: 25px;
-    width: 60%;
-    background: #e0f4e0;
-    border-radius: 20px;
-    box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+
+/* Position home button under header, left-aligned */
+#homeContainer {
+    margin-top: 10px;
+    margin-left: 10px;
 }
-.section {
-    margin-bottom: 12px;
-}
+
 button {
     padding: 10px 20px;
     font-size: 16px;
@@ -49,7 +45,16 @@ button:hover {
     transform: translateY(-2px);
 }
 
-/* === Buttons === */
+#detailCard {
+    margin: 25px auto;
+    padding: 25px;
+    width: 60%;
+    background: #e0f4e0;
+    border-radius: 20px;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+}
+
+/* Buttons row (back/edit/delete) */
 #buttonRow {
     display: flex;
     justify-content: center;
@@ -57,7 +62,11 @@ button:hover {
     margin-top: 25px;
 }
 
-/* === Notes box === */
+.section {
+    margin-bottom: 12px;
+}
+
+/* Notes + relationship details boxes */
 .notesBox, .relationshipDetailsBox {
     display: block;
     width: 100%;
@@ -70,14 +79,13 @@ button:hover {
     font-family: 'Georgia', serif;
 }
 
-/* === Trait boxes === */
+/* Traits */
 #traitsList {
     margin-top: 10px;
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
 }
-
 .traitBox {
     background-color: #cfe8cf;
     padding: 6px 10px;
@@ -85,27 +93,26 @@ button:hover {
     font-size: 14px;
 }
 
-/* === Relationships === */
+/* Relationships */
 #relationshipsList {
     margin-top: 10px;
     display: flex;
     flex-direction: column;
     gap: 12px;
 }
-
 .relationshipBox {
-    background-color: rgba(34, 85, 34, 0.3); /* deep earthy green with transparency */
+    background-color: rgba(34, 85, 34, 0.3);
     padding: 6px 10px;
     border-radius: 10px;
     font-size: 14px;
 }
 
-/* Extra spacing for section headings */
+/* Headings spacing */
 .extraSpacing {
     margin-top: 20px;
 }
 
-/* === Toast === */
+/* Toast */
 #toastOverlay {
     position: fixed;
     top: 0;
@@ -117,7 +124,6 @@ button:hover {
     align-items: center;
     justify-content: center;
 }
-
 #toastBox {
     background: #ffffff;
     padding: 20px 30px;
@@ -126,14 +132,12 @@ button:hover {
     text-align: center;
     font-family: 'Georgia', serif;
 }
-
 #toastButtons {
     margin-top: 15px;
     display: flex;
     justify-content: center;
     gap: 15px;
 }
-
 .toastBtn {
     padding: 8px 18px;
 }
@@ -144,15 +148,20 @@ button:hover {
 
 <h1>Character Tracker</h1>
 
+<!-- NEW: Home button below header -->
+<div id="homeContainer">
+    <button id="homeBtn">🏠 Home</button>
+</div>
+
 <div id="detailCard"></div>
 
 <div id="buttonRow">
-    <button id="backBtn">🔙</button>
+    <button id="backBtn">🔙 Back</button>
     <button id="editBtn">✏️ Edit Character</button>
     <button id="deleteBtn">🗑️ Delete Character</button>
 </div>
 
-<!-- === Toast Popup === -->
+<!-- Toast -->
 <div id="toastOverlay">
     <div id="toastBox">
         <div id="toastMessage"></div>
@@ -192,7 +201,7 @@ addSection("Last Name", char.lastName);
 addSection("Age", char.age);
 addSection("Gender", char.gender);
 
-/* === Personality Traits (boxes) === */
+/* === Traits === */
 if (char.personalityTraits?.length > 0) {
     const traitsLabel = document.createElement("div");
     traitsLabel.className = "section";
@@ -212,7 +221,7 @@ if (char.personalityTraits?.length > 0) {
     card.appendChild(traitsList);
 }
 
-/* === Relationships (boxes with optional scrollable details) === */
+/* === Relationships === */
 if (char.relationships?.length > 0) {
     const relLabel = document.createElement("div");
     relLabel.className = "section extraSpacing";
@@ -226,31 +235,20 @@ if (char.relationships?.length > 0) {
         const box = document.createElement("div");
         box.className = "relationshipBox";
 
-        if (rel.relatedTo) {
-            const name = `${rel.relatedTo.firstName} ${rel.relatedTo.lastName}`;
-            const nature = rel.nature || "Unknown";
-            box.textContent = `${name} (${nature})`;
+        const nature = rel.nature || "Unknown";
+        const name = rel.relatedTo
+            ? `${rel.relatedTo.firstName} ${rel.relatedTo.lastName}`
+            : "Unknown";
 
-            if (rel.details && rel.details.trim() !== "") {
-                const detailsBox = document.createElement("textarea");
-                detailsBox.className = "relationshipDetailsBox";
-                detailsBox.readOnly = true;
-                detailsBox.value = rel.details;
-                box.appendChild(document.createElement("br"));
-                box.appendChild(detailsBox);
-            }
-        } else {
-            const nature = rel.nature || "Unknown";
-            box.textContent = `(Unknown) (${nature})`;
+        box.textContent = `${name} (${nature})`;
 
-            if (rel.details && rel.details.trim() !== "") {
-                const detailsBox = document.createElement("textarea");
-                detailsBox.className = "relationshipDetailsBox";
-                detailsBox.readOnly = true;
-                detailsBox.value = rel.details;
-                box.appendChild(document.createElement("br"));
-                box.appendChild(detailsBox);
-            }
+        if (rel.details && rel.details.trim() !== "") {
+            const detailsBox = document.createElement("textarea");
+            detailsBox.className = "relationshipDetailsBox";
+            detailsBox.readOnly = true;
+            detailsBox.value = rel.details;
+            box.appendChild(document.createElement("br"));
+            box.appendChild(detailsBox);
         }
 
         relList.appendChild(box);
@@ -273,6 +271,11 @@ if (char.notes?.trim() !== "") {
     card.appendChild(textarea);
 }
 
+/* === HOME === */
+document.getElementById("homeBtn").addEventListener("click", () => {
+    window.location.href = "index.html";
+});
+
 /* === BACK === */
 document.getElementById("backBtn").addEventListener("click", () => {
     const encodedTitle = encodeURIComponent(title);
@@ -285,7 +288,7 @@ document.getElementById("editBtn").addEventListener("click", () => {
     window.location.href = `editCharacter.html?title=${encodedTitle}&index=${index}`;
 });
 
-/* === DELETE (TOAST) === */
+/* === DELETE === */
 const toastOverlay = document.getElementById("toastOverlay");
 const toastMessage = document.getElementById("toastMessage");
 
@@ -303,7 +306,7 @@ document.getElementById("toastYes").addEventListener("click", () => {
     window.location.href = `characterView.html?title=${encodedTitle}`;
 });
 
-/* NO -> CLOSE TOAST */
+/* NO -> CLOSE */
 document.getElementById("toastNo").addEventListener("click", () => {
     toastOverlay.style.display = "none";
 });

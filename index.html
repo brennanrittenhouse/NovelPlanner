@@ -78,7 +78,7 @@ button:hover {
 }
 
 /* --- Form --- */
-#newStoryForm {
+#newStoryForm, #editStoryForm {
     margin-top: 20px;
     padding: 25px;
     background: #e0f4e0;
@@ -86,7 +86,7 @@ button:hover {
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     display: none;
 }
-#newStoryForm input {
+#newStoryForm input, #editStoryForm input {
     display: block;
     margin-bottom: 15px;
     padding: 10px;
@@ -95,7 +95,15 @@ button:hover {
     border-radius: 8px;
     border: 1px solid #b0d6b0;
 }
-#newStoryForm .form-buttons {
+.form-row {
+    margin-bottom: 10px;
+}
+.form-row label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+#editStoryForm .form-buttons, #newStoryForm .form-buttons {
     display: flex;
     gap: 10px;
 }
@@ -110,9 +118,6 @@ button:hover {
     background-color: #e0f4e0;
     border-radius: 15px;
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-#novelCard h2 {
-    margin-top: 0;
 }
 #homeBtn {
     margin-bottom: 10px;
@@ -181,13 +186,28 @@ button:hover {
     <div id="novelsList"></div>
     <div class="mainContent">
 
+        <!-- Landing -->
         <div id="landingContent">
             <button id="addNovelBtn">Add New Story 📚</button>
+
             <form id="newStoryForm">
                 <h2>Create New Story</h2>
-                <input type="text" id="titleInput" placeholder="Title (required)">
-                <input type="text" id="authorInput" placeholder="Author (required)">
-                <input type="number" id="goalInput" placeholder="Goal Word Count (optional)">
+
+                <div class="form-row">
+                    <label>Title</label>
+                    <input type="text" id="titleInput">
+                </div>
+
+                <div class="form-row">
+                    <label>Author</label>
+                    <input type="text" id="authorInput">
+                </div>
+
+                <div class="form-row">
+                    <label>Goal Word Count</label>
+                    <input type="number" id="goalInput">
+                </div>
+
                 <div class="form-buttons">
                     <button type="submit">Save</button>
                     <button type="button" id="cancelBtn">Cancel</button>
@@ -195,8 +215,10 @@ button:hover {
             </form>
         </div>
 
+        <!-- Detail View -->
         <div id="novelDetail">
             <button id="homeBtn">🏠 Home</button>
+
             <div id="novelCard">
                 <h2 id="detailTitle"></h2>
                 <p id="detailAuthor"></p>
@@ -209,14 +231,37 @@ button:hover {
                     <p id="progressText"></p>
                 </div>
 
-                <!-- Update word count form (hidden initially) -->
-                <div id="updateWordCountForm" style="margin-top:10px; display:none;">
-                    <input type="number" id="wordCountInput" min="0" style="width:100px; padding:5px;">
-                    <button id="saveWordCountBtn">Save</button>
-                </div>
+                <!-- Edit story form -->
+                <form id="editStoryForm">
+
+                    <div class="form-row">
+                        <label>Title</label>
+                        <input type="text" id="editTitleInput">
+                    </div>
+
+                    <div class="form-row">
+                        <label>Author</label>
+                        <input type="text" id="editAuthorInput">
+                    </div>
+
+                    <div class="form-row">
+                        <label>Goal Word Count</label>
+                        <input type="number" id="editGoalInput" min="0">
+                    </div>
+
+                    <div class="form-row">
+                        <label>Current Word Count</label>
+                        <input type="number" id="editWordCountInput" min="0">
+                    </div>
+
+                    <div class="form-buttons">
+                        <button type="button" id="saveStoryChangesBtn">Save Changes</button>
+                        <button type="button" id="cancelStoryEditBtn">Cancel</button>
+                    </div>
+                </form>
 
                 <div style="margin-top:15px;">
-                    <button id="updateWordCountBtn">✏️ Edit</button>
+                    <button id="editStoryBtn">✏️ Edit</button>
                     <button id="viewCharactersBtn">👀 View Characters</button>
                     <button id="deleteStoryBtn">🗑️ Delete Story</button>
                 </div>
@@ -226,7 +271,7 @@ button:hover {
     </div>
 </div>
 
-<!-- === Toast Popup === -->
+<!-- Toast -->
 <div id="toastOverlay">
     <div id="toastBox">
         <div id="toastMessage"></div>
