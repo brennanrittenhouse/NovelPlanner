@@ -49,6 +49,7 @@ h1 {
     overflow: auto;
     cursor: grab;
     transition: background-color 0.2s ease;
+    z-index: 10; /* ensure boxes are above canvas */
 }
 
 .charBox:hover {
@@ -134,12 +135,27 @@ function savePositions() {
 
     // save to localStorage
     localStorage.setItem("novels", JSON.stringify(novels));
+
+    // update lines after saving positions
+    updateLines();
 }
 
 // === RENDER ===
 function renderCharacters() {
     const map = document.getElementById("mapArea");
     map.innerHTML = "";
+
+    // create canvas for lines
+    const canvas = document.createElement("canvas");
+    canvas.id = "relationshipCanvas";
+    canvas.style.position = "absolute";
+    canvas.style.top = "0";
+    canvas.style.left = "0";
+    canvas.style.width = "100%";
+    canvas.style.height = "100%";
+    canvas.style.pointerEvents = "none";
+    canvas.style.zIndex = "1"; // below boxes
+    map.appendChild(canvas);
 
     story.characters.forEach((c, index) => {
         const box = document.createElement("div");
@@ -180,6 +196,57 @@ function renderCharacters() {
         map.appendChild(box);
         enableDragging(box);
     });
+
+    // update lines after rendering
+    updateLines();
+}
+
+// === UPDATE LINES ===
+function updateLines() {
+    const canvas = document.getElementById("relationshipCanvas");
+    const ctx = canvas.getContext("2d");
+    const map = document.getElementById("mapArea");
+
+    // resize canvas to match mapArea
+    canvas.width = map.scrollWidth;
+    canvas.height = map.scrollHeight;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = "#2e4d2e"; // original color
+    ctx.lineWidth = 2;
+
+    const boxes = document.querySelectorAll(".charBox");
+    const drawn = new Set(); // to avoid drawing duplicate lines
+
+    story.characters.forEach((c, index) => {
+        (c.relationships || []).forEach(rel => {
+            console.log(`Processing relationship for ${c.firstName} ${c.lastName}: related to ${rel.relatedTo ? rel.relatedTo.firstName + ' ' + rel.relatedTo.lastName : 'unknown'}, nature: ${rel.nature}`);
+            const relatedChar = rel.relatedTo;
+            // Find index by matching names instead of object reference
+            const relatedIndex = story.characters.findIndex(char => char.firstName === relatedChar.firstName && char.lastName === relatedChar.lastName);
+
+            if (relatedIndex !== -1 && relatedIndex != index && !drawn.has(`${Math.min(index, relatedIndex)}-${Math.max(index, relatedIndex)}`)) {
+                console.log(`Drawing line between ${c.firstName} ${c.lastName} (index ${index}) and ${relatedChar.firstName} ${relatedChar.lastName} (index ${relatedIndex})`);
+                drawn.add(`${Math.min(index, relatedIndex)}-${Math.max(index, relatedIndex)}`);
+                const box1 = boxes[index];
+                const box2 = boxes[relatedIndex];
+                if (box1 && box2) {
+                    const rect1 = box1.getBoundingClientRect();
+                    const rect2 = box2.getBoundingClientRect();
+                    const mapRect = map.getBoundingClientRect();
+                    const x1 = rect1.left + rect1.width / 2 - mapRect.left + map.scrollLeft;
+                    const y1 = rect1.top + rect1.height / 2 - mapRect.top + map.scrollTop;
+                    const x2 = rect2.left + rect2.width / 2 - mapRect.left + map.scrollLeft;
+                    const y2 = rect2.top + rect2.height / 2 - mapRect.top + map.scrollTop;
+
+                    ctx.beginPath();
+                    ctx.moveTo(x1, y1);
+                    ctx.lineTo(x2, y2);
+                    ctx.stroke();
+                }
+            }
+        });
+    });
 }
 
 // === DRAGGING WITH SAVE ===
@@ -215,6 +282,12 @@ function enableDragging(box) {
     // SAVE ALSO AFTER RESIZE
     box.addEventListener("mouseup", savePositions);
     box.addEventListener("mouseleave", savePositions);
+
+    // Observe resize for updating lines
+    const resizeObserver = new ResizeObserver(() => {
+        updateLines();
+    });
+    resizeObserver.observe(box);
 }
 
 </script>
