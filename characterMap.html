@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Character Map</title>
+
+<style>
+/* === GLOBAL STYLE MATCHING characterView.html === */
+body {
+    font-family: 'Georgia', serif;
+    margin: 0;
+    padding: 0;
+    background-color: #d9f0d9;
+    color: #2e4d2e;
+    overflow: hidden;
+}
+
+h1 {
+    margin: 0;
+    padding: 25px 0;
+    text-align: center;
+    background-color: #a8d5a8;
+    color: #2e4d2e;
+    font-family: 'Palatino Linotype', serif;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* canvas area */
+#mapArea {
+    width: 100vw;
+    height: calc(100vh - 80px);
+    position: relative;
+    overflow: auto;
+    background-color: #c7e6c7;
+    border-top: 2px solid #b0d6b0;
+}
+
+/* === CHARACTER BOXES === */
+.charBox {
+    position: absolute;
+    background-color: #e0f4e0;
+    border: 2px solid #b0d6b0;
+    border-radius: 12px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+    padding: 8px;
+    width: 160px;
+    min-width: 120px;
+    resize: both;
+    overflow: auto;
+    cursor: grab;
+    transition: background-color 0.2s ease;
+}
+
+.charBox:hover {
+    background-color: #d4f0d4;
+}
+
+.charBox:active {
+    cursor: grabbing;
+}
+
+/* TEXT */
+.charBox h3 {
+    margin: 0 0 4px 0;
+    font-size: 14px;
+    text-align: center;
+    color: #2e4d2e;
+}
+
+.meta {
+    font-size: 13px;
+    color: #2e4d2e;
+    margin-top: 4px;
+    text-align: center;
+}
+
+/* traits */
+.traits {
+    margin-top: 6px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    justify-content: center;
+}
+
+.trait {
+    background: #a8d5a8;
+    padding: 3px 6px;
+    border-radius: 6px;
+    font-size: 11px;
+    color: #2e4d2e;
+}
+
+</style>
+</head>
+
+<body>
+
+<h1 id="headerTitle">Character Map</h1>
+
+<div id="mapArea"></div>
+
+<script>
+// === LOAD STORY ===
+const params = new URLSearchParams(window.location.search);
+const title = params.get("title");
+
+let novels = JSON.parse(localStorage.getItem("novels")) || [];
+let story = novels.find(n => n.title === title);
+
+// add mapPositions storage if missing
+story.mapPositions = story.mapPositions || [];
+
+if (!story) {
+    document.getElementById("mapArea").innerHTML =
+        "<h2 style='padding:20px;color:#922'>Story not found.</h2>";
+} else {
+    document.getElementById("headerTitle").textContent =
+        story.title + " Character Map";
+    renderCharacters();
+}
+
+// === SAVE POSITIONS ===
+function savePositions() {
+    // gather all box coordinates
+    const boxes = document.querySelectorAll(".charBox");
+    story.mapPositions = Array.from(boxes).map(box => ({
+        index: box.dataset.index,
+        left: box.style.left,
+        top: box.style.top,
+        width: box.style.width,
+        height: box.style.height
+    }));
+
+    // save to localStorage
+    localStorage.setItem("novels", JSON.stringify(novels));
+}
+
+// === RENDER ===
+function renderCharacters() {
+    const map = document.getElementById("mapArea");
+    map.innerHTML = "";
+
+    story.characters.forEach((c, index) => {
+        const box = document.createElement("div");
+        box.className = "charBox";
+        box.dataset.index = index;
+
+        // USE SAVED POSITION IF EXISTS
+        let saved = story.mapPositions.find(p => p.index == index);
+
+        if (saved) {
+            box.style.left = saved.left;
+            box.style.top = saved.top;
+            if (saved.width) box.style.width = saved.width;
+            if (saved.height) box.style.height = saved.height;
+        } else {
+            // default position if none saved yet
+            box.style.left = (50 + index * 35) + "px";
+            box.style.top = (50 + index * 30) + "px";
+        }
+
+        // contents
+        box.innerHTML = `
+            <h3>${c.firstName || ""} ${c.lastName || ""}</h3>
+            <div class="meta">
+                ${c.age ? "Age: " + c.age : ""}
+                ${c.gender ? " • " + c.gender : ""}
+            </div>
+            <div class="traits">
+                ${(c.personalityTraits || [])
+                    .map(t => `<div class="trait">${t}</div>`)
+                    .join("")}
+            </div>
+        `;
+
+        map.appendChild(box);
+        enableDragging(box);
+    });
+}
+
+// === DRAGGING WITH SAVE ===
+function enableDragging(box) {
+    let offsetX, offsetY;
+    let dragging = false;
+
+    box.addEventListener("mousedown", (e) => {
+        // ignore dragging if resizing corner
+        if (e.offsetX > box.clientWidth - 15 &&
+            e.offsetY > box.clientHeight - 15) return;
+
+        dragging = true;
+        box.style.cursor = "grabbing";
+        offsetX = e.clientX - box.offsetLeft;
+        offsetY = e.clientY - box.offsetTop;
+    });
+
+    window.addEventListener("mousemove", (e) => {
+        if (!dragging) return;
+        box.style.left = (e.clientX - offsetX) + "px";
+        box.style.top = (e.clientY - offsetY) + "px";
+    });
+
+    window.addEventListener("mouseup", () => {
+        if (dragging) {
+            savePositions();  // SAVE WHEN DROPPED
+        }
+        dragging = false;
+        box.style.cursor = "grab";
+    });
+
+    // SAVE ALSO AFTER RESIZE
+    box.addEventListener("mouseup", savePositions);
+    box.addEventListener("mouseleave", savePositions);
+}
+
+</script>
+
+</body>
+</html>

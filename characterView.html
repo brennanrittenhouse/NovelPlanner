@@ -163,22 +163,18 @@
 
 <script>
 /* === LOAD STORY / DATA === */
-// get story title param
 const params = new URLSearchParams(window.location.search);
 const title = params.get("title") || "";
 
-// get novels from localStorage
 let novels = JSON.parse(localStorage.getItem("novels")) || [];
 let story = novels.find(s => s.title === title);
 
-// ensure story exists (guard)
 if (!story) {
-  // If story not found, show message and stop
-  document.getElementById("charactersList").innerHTML = "<h2>Story not found</h2><p>Go back to the home screen.</p>";
-  // show home button still works
+  document.getElementById("charactersList").innerHTML =
+    "<h2>Story not found</h2><p>Go back to the home screen.</p>";
 } else {
-  // set heading to "Title Characters"
-  document.getElementById("charactersHeading").textContent = `${story.title} Characters`;
+  document.getElementById("charactersHeading").textContent =
+    `${story.title} Characters`;
 }
 
 /* === DOM references === */
@@ -193,7 +189,6 @@ const cancelAddBtn = document.getElementById("cancelAddBtn");
 function renderCharacters() {
   if (!story) return;
 
-  // leave the heading intact, then build list
   listPanel.innerHTML = `<h2 id="charactersHeading">${story.title} Characters</h2>`;
 
   if (!story.characters || story.characters.length === 0) {
@@ -207,22 +202,24 @@ function renderCharacters() {
   story.characters.forEach((char, idx) => {
     const div = document.createElement("div");
     div.className = "characterItem";
-    // display same style as on landing: "First Last"
-    const displayName = [char.firstName, char.middleName, char.lastName].filter(Boolean).join(" ");
+
+    const displayName = [char.firstName, char.middleName, char.lastName]
+      .filter(Boolean)
+      .join(" ");
+
     div.textContent = displayName || "Unnamed Character";
 
-    // click navigates to character detail page (new page)
     div.addEventListener("click", () => {
       const encodedTitle = encodeURIComponent(story.title);
       const encodedIndex = encodeURIComponent(idx);
-      window.location.href = `characterDetail.html?title=${encodedTitle}&index=${encodedIndex}`;
+      window.location.href =
+        `characterDetail.html?title=${encodedTitle}&index=${encodedIndex}`;
     });
 
     listPanel.appendChild(div);
   });
 }
 
-/* === INITIAL RENDER === */
 if (story) renderCharacters();
 
 /* === BUTTON BEHAVIOR === */
@@ -235,7 +232,8 @@ addBtn.addEventListener("click", () => {
 });
 
 viewMapBtn.addEventListener("click", () => {
-  alert("Character Map has not been implemented yet.");
+  const encodedTitle = encodeURIComponent(story.title);
+  window.location.href = `characterMap.html?title=${encodedTitle}`;
 });
 
 cancelAddBtn.addEventListener("click", () => {
@@ -259,7 +257,6 @@ addForm.addEventListener("submit", (e) => {
     return;
   }
 
-  // create character object with future-ready fields
   const newCharacter = {
     firstName: first,
     middleName: middle,
@@ -274,10 +271,8 @@ addForm.addEventListener("submit", (e) => {
   story.characters = story.characters || [];
   story.characters.push(newCharacter);
 
-  // persist
   localStorage.setItem("novels", JSON.stringify(novels));
 
-  // reset/hide form and re-render
   addForm.reset();
   addForm.style.display = "none";
   renderCharacters();
