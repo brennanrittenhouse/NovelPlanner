@@ -155,9 +155,12 @@ function renderCharacters() {
             if (saved.width) box.style.width = saved.width;
             if (saved.height) box.style.height = saved.height;
         } else {
-            // default position if none saved yet
-            box.style.left = (50 + index * 35) + "px";
-            box.style.top = (50 + index * 30) + "px";
+            // default position if none saved yet: arrange in a grid to avoid overlap
+            const cols = 5; // number of columns
+            const col = index % cols;
+            const row = Math.floor(index / cols);
+            box.style.left = (50 + col * 200) + "px";
+            box.style.top = (50 + row * 150) + "px";
         }
 
         // contents
