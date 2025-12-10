@@ -5,7 +5,6 @@
 <title>Character Map</title>
 
 <style>
-/* === GLOBAL STYLE MATCHING characterView.html === */
 body {
     font-family: 'Georgia', serif;
     margin: 0;
@@ -25,7 +24,6 @@ h1 {
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
-/* canvas area */
 #mapArea {
     width: 100vw;
     height: calc(100vh - 80px);
@@ -35,7 +33,6 @@ h1 {
     border-top: 2px solid #b0d6b0;
 }
 
-/* === CHARACTER BOXES === */
 .charBox {
     position: absolute;
     background-color: #e0f4e0;
@@ -52,15 +49,9 @@ h1 {
     z-index: 10;
 }
 
-.charBox:hover {
-    background-color: #d4f0d4;
-}
+.charBox:hover { background-color: #d4f0d4; }
+.charBox:active { cursor: grabbing; }
 
-.charBox:active {
-    cursor: grabbing;
-}
-
-/* TEXT */
 .charBox h3 {
     margin: 0 0 4px 0;
     font-size: 14px;
@@ -70,12 +61,11 @@ h1 {
 
 .meta {
     font-size: 13px;
-    color: #2e4d2e;
-    margin-top: 4px;
     text-align: center;
+    margin-top: 4px;
+    color: #2e4d2e;
 }
 
-/* traits */
 .traits {
     margin-top: 6px;
     display: flex;
@@ -91,7 +81,6 @@ h1 {
     font-size: 11px;
     color: #2e4d2e;
 }
-
 </style>
 </head>
 
@@ -109,8 +98,8 @@ const title = params.get("title");
 let novels = JSON.parse(localStorage.getItem("novels")) || [];
 let story = novels.find(n => n.title === title);
 
-// add mapPositions storage if missing
-story.mapPositions = story.mapPositions || [];
+// make sure story exists and mapPositions is defined
+if (story) story.mapPositions = story.mapPositions || [];
 
 if (!story) {
     document.getElementById("mapArea").innerHTML =
@@ -121,27 +110,98 @@ if (!story) {
     renderCharacters();
 }
 
-// === SAVE POSITIONS ===
-function savePositions() {
-    const boxes = document.querySelectorAll(".charBox");
-    story.mapPositions = Array.from(boxes).map(box => ({
-        index: box.dataset.index,
-        left: box.style.left,
-        top: box.style.top,
-        width: box.style.width,
-        height: box.style.height
-    }));
+/* -----------------------
+   Helpers: persist + parse
+   ----------------------- */
 
+function persistNovels() {
     localStorage.setItem("novels", JSON.stringify(novels));
+}
+
+// convert value to number (strip px if present)
+function toNum(v) {
+    if (v === undefined || v === null) return undefined;
+    if (typeof v === "number") return v;
+    return Number(String(v).replace("px","")) || 0;
+}
+
+/* -----------------------
+   Save positions (pixels & percentages)
+   ----------------------- */
+function savePositions() {
+    const map = document.getElementById("mapArea");
+    const mapW = map.clientWidth || 1;
+    const mapH = map.clientHeight || 1;
+
+    const boxes = document.querySelectorAll(".charBox");
+
+    story.mapPositions = Array.from(boxes).map(box => {
+        const leftPx = toNum(box.style.left || box.offsetLeft);
+        const topPx = toNum(box.style.top || box.offsetTop);
+
+        return {
+            index: box.dataset.index,
+            leftPx: leftPx,
+            topPx: topPx,
+            leftPct: leftPx / mapW,
+            topPct: topPx / mapH,
+            width: box.style.width || window.getComputedStyle(box).width,
+            height: box.style.height || window.getComputedStyle(box).height
+        };
+    });
+
+    persistNovels();
     updateLines();
 }
 
-// === RENDER ===
+/* -----------------------
+   When resizing window: use percentages to compute pixel positions,
+   update saved pixel values so reload won't lose them.
+   ----------------------- */
+function scaleAllBoxesToWindow(saveAfter = true) {
+    if (!story) return;
+    const map = document.getElementById("mapArea");
+    const mapW = map.clientWidth || 1;
+    const mapH = map.clientHeight || 1;
+    const boxes = document.querySelectorAll(".charBox");
+
+    boxes.forEach((box, idx) => {
+        const saved = story.mapPositions.find(p => p.index == idx);
+        if (saved && (saved.leftPct !== undefined || saved.topPct !== undefined)) {
+            const leftPx = (saved.leftPct || 0) * mapW;
+            const topPx = (saved.topPct || 0) * mapH;
+            box.style.left = leftPx + "px";
+            box.style.top = topPx + "px";
+
+            // keep saved px in sync so a reload keeps the visible layout
+            saved.leftPx = leftPx;
+            saved.topPx = topPx;
+        } else if (saved && saved.leftPx !== undefined) {
+            // fallback: compute pct from px and reapply px (helps if map size changed)
+            const leftPx = saved.leftPx;
+            const topPx = saved.topPx;
+            saved.leftPct = leftPx / mapW;
+            saved.topPct = topPx / mapH;
+            box.style.left = leftPx + "px";
+            box.style.top = topPx + "px";
+        }
+    });
+
+    if (saveAfter) {
+        persistNovels();
+    }
+
+    updateLines();
+}
+
+/* -----------------------
+   RENDER CHARACTERS
+   ----------------------- */
 function renderCharacters() {
     const map = document.getElementById("mapArea");
     map.innerHTML = "";
 
-    // create canvas for lines
+    // create canvas for relationship lines
     const canvas = document.createElement("canvas");
     canvas.id = "relationshipCanvas";
     canvas.style.position = "absolute";
@@ -153,23 +213,56 @@ function renderCharacters() {
     canvas.style.zIndex = "1";
     map.appendChild(canvas);
 
+    const mapW = map.clientWidth || 1;
+    const mapH = map.clientHeight || 1;
+
     story.characters.forEach((c, index) => {
         const box = document.createElement("div");
         box.className = "charBox";
         box.dataset.index = index;
 
-        let saved = story.mapPositions.find(p => p.index == index);
+        // find saved position
+        const saved = story.mapPositions.find(p => p.index == index);
+
         if (saved) {
-            box.style.left = saved.left;
-            box.style.top = saved.top;
+            // Prefer percentage-based placement (keeps layout consistent across sizes)
+            if (saved.leftPct !== undefined && saved.topPct !== undefined) {
+                const leftPx = saved.leftPct * mapW;
+                const topPx = saved.topPct * mapH;
+                box.style.left = leftPx + "px";
+                box.style.top = topPx + "px";
+                // sync px into saved (avoid losing it on reload)
+                saved.leftPx = leftPx;
+                saved.topPx = topPx;
+            } else if (saved.leftPx !== undefined && saved.topPx !== undefined) {
+                box.style.left = saved.leftPx + "px";
+                box.style.top = saved.topPx + "px";
+                // compute percentages for future scaling
+                saved.leftPct = saved.leftPx / mapW;
+                saved.topPct = saved.topPx / mapH;
+            }
             if (saved.width) box.style.width = saved.width;
             if (saved.height) box.style.height = saved.height;
         } else {
+            // default grid layout (no saved state)
             const cols = 5;
             const col = index % cols;
             const row = Math.floor(index / cols);
-            box.style.left = (50 + col * 200) + "px";
-            box.style.top = (50 + row * 150) + "px";
+            const left = 50 + col * 200;
+            const top = 50 + row * 150;
+            box.style.left = left + "px";
+            box.style.top = top + "px";
+
+            // add initial saved object so scaling has something to reference later
+            story.mapPositions.push({
+                index: index,
+                leftPx: left,
+                topPx: top,
+                leftPct: left / mapW,
+                topPct: top / mapH,
+                width: box.style.width,
+                height: box.style.height
+            });
         }
 
         box.innerHTML = `
@@ -189,19 +282,23 @@ function renderCharacters() {
         enableDragging(box);
     });
 
+    // ensure stored state saved (in case we added defaults)
+    persistNovels();
     updateLines();
 }
 
-// === UPDATE LINES ===
+/* -----------------------
+   DRAW LINES
+   ----------------------- */
 function updateLines() {
     const canvas = document.getElementById("relationshipCanvas");
     if (!canvas) return;
-
     const ctx = canvas.getContext("2d");
     const map = document.getElementById("mapArea");
 
-    canvas.width = map.scrollWidth;
-    canvas.height = map.scrollHeight;
+    // size canvas to scroll area so lines can reach boxes outside viewport
+    canvas.width = map.scrollWidth || map.clientWidth || 1;
+    canvas.height = map.scrollHeight || map.clientHeight || 1;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.strokeStyle = "#2e4d2e";
@@ -213,46 +310,48 @@ function updateLines() {
     story.characters.forEach((c, index) => {
         (c.relationships || []).forEach(rel => {
             const relatedChar = rel.relatedTo;
+            if (!relatedChar) return;
             const relatedIndex = story.characters.findIndex(char =>
                 char.firstName === relatedChar.firstName &&
                 char.lastName === relatedChar.lastName
             );
 
-            if (relatedIndex !== -1 &&
-                relatedIndex != index &&
-                !drawn.has(`${Math.min(index, relatedIndex)}-${Math.max(index, relatedIndex)}`)) {
+            if (relatedIndex === -1 || relatedIndex === index) return;
+            const key = `${Math.min(index, relatedIndex)}-${Math.max(index, relatedIndex)}`;
+            if (drawn.has(key)) return;
+            drawn.add(key);
 
-                drawn.add(`${Math.min(index, relatedIndex)}-${Math.max(index, relatedIndex)}`);
-                const box1 = boxes[index];
-                const box2 = boxes[relatedIndex];
-                if (!box1 || !box2) return;
+            const box1 = boxes[index];
+            const box2 = boxes[relatedIndex];
+            if (!box1 || !box2) return;
 
-                const rect1 = box1.getBoundingClientRect();
-                const rect2 = box2.getBoundingClientRect();
-                const mapRect = map.getBoundingClientRect();
+            const rect1 = box1.getBoundingClientRect();
+            const rect2 = box2.getBoundingClientRect();
+            const mapRect = map.getBoundingClientRect();
 
-                const x1 = rect1.left + rect1.width / 2 - mapRect.left + map.scrollLeft;
-                const y1 = rect1.top + rect1.height / 2 - mapRect.top + map.scrollTop;
-                const x2 = rect2.left + rect2.width / 2 - mapRect.left + map.scrollLeft;
-                const y2 = rect2.top + rect2.height / 2 - mapRect.top + map.scrollTop;
+            const x1 = rect1.left + rect1.width / 2 - mapRect.left + map.scrollLeft;
+            const y1 = rect1.top + rect1.height / 2 - mapRect.top + map.scrollTop;
+            const x2 = rect2.left + rect2.width / 2 - mapRect.left + map.scrollLeft;
+            const y2 = rect2.top + rect2.height / 2 - mapRect.top + map.scrollTop;
 
-                ctx.beginPath();
-                ctx.moveTo(x1, y1);
-                ctx.lineTo(x2, y2);
-                ctx.stroke();
-            }
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
         });
     });
 }
 
-// === DRAGGING ===
+/* -----------------------
+   DRAGGING + RESIZE OBSERVER
+   ----------------------- */
 function enableDragging(box) {
-    let offsetX, offsetY;
+    let offsetX = 0, offsetY = 0;
     let dragging = false;
 
     box.addEventListener("mousedown", (e) => {
-        if (e.offsetX > box.clientWidth - 15 &&
-            e.offsetY > box.clientHeight - 15) return;
+        // ignore the bottom-right resize handle area
+        if (e.offsetX > box.clientWidth - 15 && e.offsetY > box.clientHeight - 15) return;
 
         dragging = true;
         box.style.cursor = "grabbing";
@@ -264,27 +363,66 @@ function enableDragging(box) {
         if (!dragging) return;
         box.style.left = (e.clientX - offsetX) + "px";
         box.style.top = (e.clientY - offsetY) + "px";
+        updateLines();
     });
 
     window.addEventListener("mouseup", () => {
-        if (dragging) savePositions();
+        if (dragging) {
+            // after finishing drag, update saved px/pct
+            savePositions();
+        }
         dragging = false;
         box.style.cursor = "grab";
     });
 
-    // resize observer for the box
-    const resizeObserver = new ResizeObserver(() => {
-        updateLines();
+    // when user resizes the box itself, save new width/height and keep lines updated
+    const ro = new ResizeObserver(() => {
+        // update saved width/height and px/pct
+        savePositions();
     });
-    resizeObserver.observe(box);
+    ro.observe(box);
 }
 
-// === REDRAW LINES ON WINDOW RESIZE ===
-let resizeTimer;
+/* -----------------------
+   WINDOW RESIZE: scale, persist (debounced)
+   ----------------------- */
+let resizeTimer = null;
 window.addEventListener("resize", () => {
-    clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(updateLines, 150);
+    if (resizeTimer) clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+        scaleAllBoxesToWindow(true); // also save so reload keeps same layout
+    }, 100);
 });
+
+/* -----------------------
+   Initial guard: ensure consistent saved shape (numbers)
+   ----------------------- */
+function normalizeStoredPositions() {
+    if (!story) return;
+    const map = document.getElementById("mapArea");
+    const mapW = map.clientWidth || 1;
+    const mapH = map.clientHeight || 1;
+
+    story.mapPositions = (story.mapPositions || []).map(p => {
+        const leftPx = toNum(p.leftPx ?? p.left);
+        const topPx = toNum(p.topPx ?? p.top);
+        const leftPct = p.leftPct !== undefined ? Number(p.leftPct) : (leftPx / mapW);
+        const topPct = p.topPct !== undefined ? Number(p.topPct) : (topPx / mapH);
+        return {
+            index: p.index,
+            leftPx: leftPx,
+            topPx: topPx,
+            leftPct: leftPct,
+            topPct: topPct,
+            width: p.width,
+            height: p.height
+        };
+    });
+    persistNovels();
+}
+
+// run normalization (helps fix older saved formats)
+normalizeStoredPositions();
 </script>
 
 </body>
