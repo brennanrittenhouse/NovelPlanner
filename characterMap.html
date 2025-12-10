@@ -49,7 +49,7 @@ h1 {
     overflow: auto;
     cursor: grab;
     transition: background-color 0.2s ease;
-    z-index: 10; /* ensure boxes are above canvas */
+    z-index: 10;
 }
 
 .charBox:hover {
@@ -123,7 +123,6 @@ if (!story) {
 
 // === SAVE POSITIONS ===
 function savePositions() {
-    // gather all box coordinates
     const boxes = document.querySelectorAll(".charBox");
     story.mapPositions = Array.from(boxes).map(box => ({
         index: box.dataset.index,
@@ -133,10 +132,7 @@ function savePositions() {
         height: box.style.height
     }));
 
-    // save to localStorage
     localStorage.setItem("novels", JSON.stringify(novels));
-
-    // update lines after saving positions
     updateLines();
 }
 
@@ -154,7 +150,7 @@ function renderCharacters() {
     canvas.style.width = "100%";
     canvas.style.height = "100%";
     canvas.style.pointerEvents = "none";
-    canvas.style.zIndex = "1"; // below boxes
+    canvas.style.zIndex = "1";
     map.appendChild(canvas);
 
     story.characters.forEach((c, index) => {
@@ -162,24 +158,20 @@ function renderCharacters() {
         box.className = "charBox";
         box.dataset.index = index;
 
-        // USE SAVED POSITION IF EXISTS
         let saved = story.mapPositions.find(p => p.index == index);
-
         if (saved) {
             box.style.left = saved.left;
             box.style.top = saved.top;
             if (saved.width) box.style.width = saved.width;
             if (saved.height) box.style.height = saved.height;
         } else {
-            // default position if none saved yet: arrange in a grid to avoid overlap
-            const cols = 5; // number of columns
+            const cols = 5;
             const col = index % cols;
             const row = Math.floor(index / cols);
             box.style.left = (50 + col * 200) + "px";
             box.style.top = (50 + row * 150) + "px";
         }
 
-        // contents
         box.innerHTML = `
             <h3>${c.firstName || ""} ${c.lastName || ""}</h3>
             <div class="meta">
@@ -197,65 +189,68 @@ function renderCharacters() {
         enableDragging(box);
     });
 
-    // update lines after rendering
     updateLines();
 }
 
 // === UPDATE LINES ===
 function updateLines() {
     const canvas = document.getElementById("relationshipCanvas");
+    if (!canvas) return;
+
     const ctx = canvas.getContext("2d");
     const map = document.getElementById("mapArea");
 
-    // resize canvas to match mapArea
     canvas.width = map.scrollWidth;
     canvas.height = map.scrollHeight;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = "#2e4d2e"; // original color
+    ctx.strokeStyle = "#2e4d2e";
     ctx.lineWidth = 2;
 
     const boxes = document.querySelectorAll(".charBox");
-    const drawn = new Set(); // to avoid drawing duplicate lines
+    const drawn = new Set();
 
     story.characters.forEach((c, index) => {
         (c.relationships || []).forEach(rel => {
-            console.log(`Processing relationship for ${c.firstName} ${c.lastName}: related to ${rel.relatedTo ? rel.relatedTo.firstName + ' ' + rel.relatedTo.lastName : 'unknown'}, nature: ${rel.nature}`);
             const relatedChar = rel.relatedTo;
-            // Find index by matching names instead of object reference
-            const relatedIndex = story.characters.findIndex(char => char.firstName === relatedChar.firstName && char.lastName === relatedChar.lastName);
+            const relatedIndex = story.characters.findIndex(char =>
+                char.firstName === relatedChar.firstName &&
+                char.lastName === relatedChar.lastName
+            );
 
-            if (relatedIndex !== -1 && relatedIndex != index && !drawn.has(`${Math.min(index, relatedIndex)}-${Math.max(index, relatedIndex)}`)) {
-                console.log(`Drawing line between ${c.firstName} ${c.lastName} (index ${index}) and ${relatedChar.firstName} ${relatedChar.lastName} (index ${relatedIndex})`);
+            if (relatedIndex !== -1 &&
+                relatedIndex != index &&
+                !drawn.has(`${Math.min(index, relatedIndex)}-${Math.max(index, relatedIndex)}`)) {
+
                 drawn.add(`${Math.min(index, relatedIndex)}-${Math.max(index, relatedIndex)}`);
                 const box1 = boxes[index];
                 const box2 = boxes[relatedIndex];
-                if (box1 && box2) {
-                    const rect1 = box1.getBoundingClientRect();
-                    const rect2 = box2.getBoundingClientRect();
-                    const mapRect = map.getBoundingClientRect();
-                    const x1 = rect1.left + rect1.width / 2 - mapRect.left + map.scrollLeft;
-                    const y1 = rect1.top + rect1.height / 2 - mapRect.top + map.scrollTop;
-                    const x2 = rect2.left + rect2.width / 2 - mapRect.left + map.scrollLeft;
-                    const y2 = rect2.top + rect2.height / 2 - mapRect.top + map.scrollTop;
+                if (!box1 || !box2) return;
 
-                    ctx.beginPath();
-                    ctx.moveTo(x1, y1);
-                    ctx.lineTo(x2, y2);
-                    ctx.stroke();
-                }
+                const rect1 = box1.getBoundingClientRect();
+                const rect2 = box2.getBoundingClientRect();
+                const mapRect = map.getBoundingClientRect();
+
+                const x1 = rect1.left + rect1.width / 2 - mapRect.left + map.scrollLeft;
+                const y1 = rect1.top + rect1.height / 2 - mapRect.top + map.scrollTop;
+                const x2 = rect2.left + rect2.width / 2 - mapRect.left + map.scrollLeft;
+                const y2 = rect2.top + rect2.height / 2 - mapRect.top + map.scrollTop;
+
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
             }
         });
     });
 }
 
-// === DRAGGING WITH SAVE ===
+// === DRAGGING ===
 function enableDragging(box) {
     let offsetX, offsetY;
     let dragging = false;
 
     box.addEventListener("mousedown", (e) => {
-        // ignore dragging if resizing corner
         if (e.offsetX > box.clientWidth - 15 &&
             e.offsetY > box.clientHeight - 15) return;
 
@@ -272,24 +267,24 @@ function enableDragging(box) {
     });
 
     window.addEventListener("mouseup", () => {
-        if (dragging) {
-            savePositions();  // SAVE WHEN DROPPED
-        }
+        if (dragging) savePositions();
         dragging = false;
         box.style.cursor = "grab";
     });
 
-    // SAVE ALSO AFTER RESIZE
-    box.addEventListener("mouseup", savePositions);
-    box.addEventListener("mouseleave", savePositions);
-
-    // Observe resize for updating lines
+    // resize observer for the box
     const resizeObserver = new ResizeObserver(() => {
         updateLines();
     });
     resizeObserver.observe(box);
 }
 
+// === REDRAW LINES ON WINDOW RESIZE ===
+let resizeTimer;
+window.addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(updateLines, 150);
+});
 </script>
 
 </body>
