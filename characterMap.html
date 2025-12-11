@@ -124,7 +124,7 @@ function toNum(v) {
 }
 
 /* -----------------------
-   Clamp box inside map
+   Clamp box inside map (for DRAGGING ONLY)
 ----------------------- */
 function clampBoxToBounds(box, map) {
     const mapW = map.clientWidth;
@@ -138,12 +138,38 @@ function clampBoxToBounds(box, map) {
 
     if (left < 0) left = 0;
     if (top < 0) top = 0;
-
     if (left + boxW > mapW) left = mapW - boxW;
     if (top + boxH > mapH) top = mapH - boxH;
 
     box.style.left = left + "px";
     box.style.top = top + "px";
+}
+
+/* -----------------------
+   Enforce max size during RESIZING (no shifting)
+----------------------- */
+function enforceResizeLimits(box) {
+    const map = document.getElementById("mapArea");
+    const mapW = map.clientWidth;
+    const mapH = map.clientHeight;
+
+    const rect = box.getBoundingClientRect();
+    const mapRect = map.getBoundingClientRect();
+
+    const left = rect.left - mapRect.left + map.scrollLeft;
+    const top = rect.top - mapRect.top + map.scrollTop;
+
+    const maxWidth = mapW - left - 30;
+    const maxHeight = mapH - top - 30;
+
+    // stop growth, not reposition
+    if (box.offsetWidth > maxWidth) {
+        box.style.width = maxWidth + "px";
+    }
+
+    if (box.offsetHeight > maxHeight) {
+        box.style.height = maxHeight + "px";
+    }
 }
 
 /* -----------------------
@@ -176,29 +202,25 @@ function savePositions() {
 }
 
 /* -----------------------
-   Rescale boxes after resize
+   Rescale after resize
 ----------------------- */
 function rescaleAndClamp() {
     const map = document.getElementById("mapArea");
     const mapW = map.clientWidth;
     const mapH = map.clientHeight;
-    const boxes = document.querySelectorAll(".charBox");
 
-    boxes.forEach((box, idx) => {
-        const saved = story.mapPositions.find(p => p.index == idx);
+    document.querySelectorAll(".charBox").forEach((box, index) => {
+        const saved = story.mapPositions.find(p => p.index == index);
         if (!saved) return;
 
-        // compute new pixel coords from stored percentages
-        const left = saved.leftPct * mapW;
-        const top = saved.topPct * mapH;
+        const newLeft = saved.leftPct * mapW;
+        const newTop = saved.topPct * mapH;
 
-        box.style.left = left + "px";
-        box.style.top = top + "px";
+        box.style.left = newLeft + "px";
+        box.style.top = newTop + "px";
 
-        // also clamp so nothing is cut off
         clampBoxToBounds(box, map);
 
-        // update stored px values so reload is correct
         saved.leftPx = toNum(box.style.left);
         saved.topPx = toNum(box.style.top);
     });
@@ -208,13 +230,13 @@ function rescaleAndClamp() {
 }
 
 /* -----------------------
-   RENDER CHARACTERS
+   Render characters
 ----------------------- */
 function renderCharacters() {
     const map = document.getElementById("mapArea");
     map.innerHTML = "";
 
-    // relationship canvas
+    // canvas for relationship lines
     const canvas = document.createElement("canvas");
     canvas.id = "relationshipCanvas";
     canvas.style.position = "absolute";
@@ -237,31 +259,20 @@ function renderCharacters() {
         box.dataset.index = index;
 
         if (saved) {
-            const left = saved.leftPct * mapW;
-            const top = saved.topPct * mapH;
-
-            box.style.left = left + "px";
-            box.style.top = top + "px";
-
+            box.style.left = saved.leftPct * mapW + "px";
+            box.style.top = saved.topPct * mapH + "px";
             if (saved.width) box.style.width = saved.width;
             if (saved.height) box.style.height = saved.height;
 
-            // clamp on initial load
             clampBoxToBounds(box, map);
         } else {
-            /* -------------------------------
-               UPDATED NON-OVERLAPPING INITIAL
-               LAYOUT (ONLY CHANGE MADE)
-            -------------------------------- */
-            const BOX_W = 200; // width spacing
-            const BOX_H = 170; // height spacing
-
-            const cols = Math.max(1, Math.floor(mapW / BOX_W));
+            // non-overlapping default
+            const cols = 5;
             const col = index % cols;
             const row = Math.floor(index / cols);
 
-            const left = 30 + col * BOX_W;
-            const top = 30 + row * BOX_H;
+            const left = 50 + col * 200;
+            const top = 50 + row * 150;
 
             box.style.left = left + "px";
             box.style.top = top + "px";
@@ -289,7 +300,7 @@ function renderCharacters() {
         `;
 
         map.appendChild(box);
-        enableDragging(box);
+        enableDraggingAndResizing(box);
     });
 
     persistNovels();
@@ -297,7 +308,7 @@ function renderCharacters() {
 }
 
 /* -----------------------
-   UPDATE RELATIONSHIP LINES
+   Lines
 ----------------------- */
 function updateLines() {
     const canvas = document.getElementById("relationshipCanvas");
@@ -337,10 +348,10 @@ function updateLines() {
             const r2 = b2.getBoundingClientRect();
             const mapRect = map.getBoundingClientRect();
 
-            const x1 = r1.left + r1.width / 2 - mapRect.left + map.scrollLeft;
-            const y1 = r1.top + r1.height / 2 - mapRect.top + map.scrollTop;
-            const x2 = r2.left + r2.width / 2 - mapRect.left + map.scrollLeft;
-            const y2 = r2.top + r2.height / 2 - mapRect.top + map.scrollTop;
+            const x1 = r1.left + r1.width/2 - mapRect.left + map.scrollLeft;
+            const y1 = r1.top + r1.height/2 - mapRect.top + map.scrollTop;
+            const x2 = r2.left + r2.width/2 - mapRect.left + map.scrollLeft;
+            const y2 = r2.top + r2.height/2 - mapRect.top + map.scrollTop;
 
             ctx.beginPath();
             ctx.moveTo(x1, y1);
@@ -351,18 +362,18 @@ function updateLines() {
 }
 
 /* -----------------------
-   DRAGGING
+   Drag + Resize logic
 ----------------------- */
-function enableDragging(box) {
+function enableDraggingAndResizing(box) {
     let dragging = false;
     let offsetX = 0, offsetY = 0;
 
+    /* ---- DRAGGING ---- */
     box.addEventListener("mousedown", e => {
         if (e.offsetX > box.clientWidth - 15 && e.offsetY > box.clientHeight - 15) return;
 
         dragging = true;
         box.style.cursor = "grabbing";
-
         offsetX = e.clientX - box.offsetLeft;
         offsetY = e.clientY - box.offsetTop;
     });
@@ -383,20 +394,36 @@ function enableDragging(box) {
     });
 
     window.addEventListener("mouseup", () => {
-        if (dragging) {
-            savePositions();
-        }
+        if (dragging) savePositions();
         dragging = false;
         box.style.cursor = "grab";
     });
 
-    new ResizeObserver(() => {
-        savePositions();
-    }).observe(box);
+    /* ---- RESIZING ---- */
+    let oldW = box.offsetWidth;
+    let oldH = box.offsetHeight;
+
+    const observer = new ResizeObserver(() => {
+        // enforce max size without moving the box
+        enforceResizeLimits(box);
+
+        // detect real resize
+        const changed = (
+            oldW !== box.offsetWidth ||
+            oldH !== box.offsetHeight
+        );
+
+        oldW = box.offsetWidth;
+        oldH = box.offsetHeight;
+
+        if (changed) savePositions();
+    });
+
+    observer.observe(box);
 }
 
 /* -----------------------
-   FIX FOR MAC ZOOM
+   Window resize fix
 ----------------------- */
 let resizeDebounce = null;
 window.addEventListener("resize", () => {
@@ -408,7 +435,7 @@ window.addEventListener("resize", () => {
 });
 
 /* -----------------------
-   Normalize
+   Normalize stored positions
 ----------------------- */
 function normalizeStoredPositions() {
     const map = document.getElementById("mapArea");
