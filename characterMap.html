@@ -308,7 +308,7 @@ function renderCharacters() {
 }
 
 /* -----------------------
-   Lines
+   Lines (only colouring added)
 ----------------------- */
 function updateLines() {
     const canvas = document.getElementById("relationshipCanvas");
@@ -324,6 +324,30 @@ function updateLines() {
 
     const boxes = document.querySelectorAll(".charBox");
     const drawn = new Set();
+
+    // Colour map by category
+    const relationshipColours = {
+        Romantic: "#ffbbe7",
+        Family: "#c3b1e1",
+        Friendship: "#ffee8c",
+        "Work / Professional": "#779ecb",
+        "Conflict / Rivalry": "#c23b22",
+        Other: "#ff964f",
+        Default: "#2e4d2e"
+    };
+
+    // normalized -> category map (lowercase keys)
+    const relationshipCategoryMap = {
+        "dating":"Romantic","engaged":"Romantic","ex-partners":"Romantic","lovers":"Romantic","married":"Romantic","situationship":"Romantic",
+        "adoptive parent/adoptive child":"Family","aunt/uncle and niece/nephew":"Family","foster parent/foster child":"Family","grandparent/grandchild":"Family",
+        "great grandparent/great grandchild":"Family","great great grandparent/great great grandchild":"Family","half-siblings":"Family","parent/child":"Family",
+        "siblings":"Family","step-parent/step-child":"Family","step-siblings":"Family",
+        "classmates":"Friendship","club members":"Friendship","family friends":"Friendship","friends":"Friendship","mentor":"Friendship",
+        "neighbour":"Friendship","roommate":"Friendship","teacher/student":"Friendship","teammates":"Friendship",
+        "boss/employee":"Work / Professional","client/service provider":"Work / Professional","co-workers":"Work / Professional",
+        "bully/victim":"Conflict / Rivalry","enemies":"Conflict / Rivalry","frenemies":"Conflict / Rivalry","rivals":"Conflict / Rivalry","secret ally":"Conflict / Rivalry",
+        "other (see details)":"Other","pet/owner":"Other"
+    };
 
     story.characters.forEach((c, index) => {
         (c.relationships || []).forEach(rel => {
@@ -353,13 +377,22 @@ function updateLines() {
             const x2 = r2.left + r2.width/2 - mapRect.left + map.scrollLeft;
             const y2 = r2.top + r2.height/2 - mapRect.top + map.scrollTop;
 
+            // --- COLOUR SELECTION (only added logic) ---
+            const rawType = (rel.relationshipType ?? rel.type ?? rel.nature ?? rel.relation ?? rel.kind ?? "").toString();
+            const normalized = rawType.trim().toLowerCase();
+            const category = relationshipCategoryMap[normalized] || "Default";
+            const color = relationshipColours[category] || relationshipColours.Default;
+            // ------------------------------------------------
+
             ctx.beginPath();
             ctx.moveTo(x1, y1);
             ctx.lineTo(x2, y2);
+            ctx.strokeStyle = color; // set colour right before stroking
             ctx.stroke();
         });
     });
 }
+
 
 /* -----------------------
    Drag + Resize logic
